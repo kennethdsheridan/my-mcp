@@ -1,9 +1,17 @@
-pub mod issue;
+// Generic domain models
+pub mod ticket;
+pub mod workspace;
 pub mod label;
-pub mod user;
 pub mod project;
 
-pub use issue::*;
+pub use ticket::*;
+pub use workspace::*;
 pub use label::*;
-pub use user::*;
 pub use project::*;
+
+// Legacy Linear-specific types (for backward compatibility)
+pub mod issue;
+pub mod user;
+
+pub use issue::*;
+pub use user::*;

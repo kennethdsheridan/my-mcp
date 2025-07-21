@@ -5,12 +5,15 @@ use std::sync::Arc;
 use tracing::{info, error};
 use tracing_subscriber::{fmt, EnvFilter};
 
-use linear_mcp::{
+use generic_mcp::{
     Application,
-    LinearClient,
     McpServerImpl,
     McpServer,
+    ProviderConfig,
 };
+
+#[cfg(feature = "linear")]
+use generic_mcp::providers::LinearAdapter;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,17 +23,34 @@ async fn main() -> Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    info!("Starting linear-mcp server...");
+    info!("Starting generic-mcp server...");
 
-    let linear_api_token = env::var("LINEAR_API_TOKEN")
-        .map_err(|_| anyhow::anyhow!("LINEAR_API_TOKEN environment variable is required"))?;
-
-    info!("Creating Linear client...");
-    let linear_client = LinearClient::new(linear_api_token)?;
-    let linear_service = Arc::new(linear_client);
+    // Default to Linear provider for now
+    let provider = env::var("MCP_PROVIDER").unwrap_or_else(|_| "linear".to_string());
+    
+    let ticket_service = match provider.as_str() {
+        #[cfg(feature = "linear")]
+        "linear" => {
+            let linear_api_token = env::var("LINEAR_API_TOKEN")
+                .map_err(|_| anyhow::anyhow!("LINEAR_API_TOKEN environment variable is required for Linear provider"))?;
+            
+            let config = ProviderConfig {
+                provider_type: "linear".to_string(),
+                api_token: linear_api_token,
+                base_url: None,
+                workspace_id: None,
+            };
+            
+            info!("Creating Linear provider adapter...");
+            Arc::new(LinearAdapter::new(config)?) as Arc<dyn generic_mcp::TicketService + Send + Sync>
+        },
+        _ => {
+            return Err(anyhow::anyhow!("Unsupported provider: {}. Available providers: linear", provider));
+        }
+    };
 
     info!("Creating application...");
-    let application = Arc::new(Application::new(linear_service));
+    let application = Arc::new(Application::new(ticket_service));
 
     info!("Creating MCP server...");
     let mcp_server = McpServerImpl::new(application.clone());

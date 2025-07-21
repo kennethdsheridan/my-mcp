@@ -2,75 +2,85 @@ use anyhow::Result;
 use std::sync::Arc;
 use tracing::{info, debug};
 
-use crate::domain::{Issue, IssueFilter, User, IssueStateType};
-use crate::ports::LinearService;
+use crate::domain::{Ticket, TicketFilter, StateType, Workspace};
+use crate::domain::workspace::User;
+use crate::ports::TicketService;
 
 pub struct Application {
-    linear_service: Arc<dyn LinearService + Send + Sync>,
+    ticket_service: Arc<dyn TicketService + Send + Sync>,
 }
 
 impl Application {
-    pub fn new(linear_service: Arc<dyn LinearService + Send + Sync>) -> Self {
-        Self { linear_service }
+    pub fn new(ticket_service: Arc<dyn TicketService + Send + Sync>) -> Self {
+        Self { ticket_service }
     }
 
-    pub async fn get_assigned_issues(&self, user_id: &str) -> Result<Vec<Issue>> {
-        debug!("Getting assigned issues for user: {}", user_id);
-        let issues = self.linear_service.get_assigned_issues(user_id).await?;
-        info!("Retrieved {} assigned issues for user {}", issues.len(), user_id);
-        Ok(issues)
+    pub async fn get_assigned_tickets(&self, user_id: &str) -> Result<Vec<Ticket>> {
+        debug!("Getting assigned tickets for user: {}", user_id);
+        let tickets = self.ticket_service.get_assigned_tickets(user_id).await?;
+        info!("Retrieved {} assigned tickets for user {}", tickets.len(), user_id);
+        Ok(tickets)
     }
 
     pub async fn get_current_user(&self) -> Result<User> {
         debug!("Getting current user information");
-        let user = self.linear_service.get_current_user().await?;
+        let user = self.ticket_service.get_current_user().await?;
         info!("Retrieved current user: {}", user.name);
         Ok(user)
     }
 
-    pub async fn search_issues(&self, query: &str) -> Result<Vec<Issue>> {
-        debug!("Searching issues with query: {}", query);
+    pub async fn search_tickets(&self, query: &str) -> Result<Vec<Ticket>> {
+        debug!("Searching tickets with query: {}", query);
         
-        let filter = IssueFilter {
+        let filter = TicketFilter {
             assignee_id: None,
             project_id: None,
             state_type: None,
             priority: None,
             labels: None,
             search_query: Some(query.to_string()),
+            custom_filters: std::collections::HashMap::new(),
         };
 
-        let issues = self.linear_service.search_issues(&filter).await?;
-        info!("Found {} issues for query: {}", issues.len(), query);
-        Ok(issues)
+        let tickets = self.ticket_service.search_tickets(&filter).await?;
+        info!("Found {} tickets for query: {}", tickets.len(), query);
+        Ok(tickets)
     }
 
-    pub async fn get_issue(&self, issue_id: &str) -> Result<Option<Issue>> {
-        debug!("Getting issue: {}", issue_id);
-        let issue = self.linear_service.get_issue(issue_id).await?;
+    pub async fn get_ticket(&self, ticket_id: &str) -> Result<Option<Ticket>> {
+        debug!("Getting ticket: {}", ticket_id);
+        let ticket = self.ticket_service.get_ticket(ticket_id).await?;
         
-        match &issue {
-            Some(i) => info!("Retrieved issue: {} - {}", i.identifier, i.title),
-            None => info!("Issue not found: {}", issue_id),
+        match &ticket {
+            Some(t) => info!("Retrieved ticket: {} - {}", t.identifier, t.title),
+            None => info!("Ticket not found: {}", ticket_id),
         }
         
-        Ok(issue)
+        Ok(ticket)
     }
 
-    pub async fn get_my_active_issues(&self) -> Result<Vec<Issue>> {
-        debug!("Getting active issues for current user");
+    pub async fn get_my_active_tickets(&self) -> Result<Vec<Ticket>> {
+        debug!("Getting active tickets for current user");
         let user = self.get_current_user().await?;
-        let all_issues = self.get_assigned_issues(&user.id).await?;
+        let all_tickets = self.get_assigned_tickets(&user.id).await?;
         
-        let active_issues: Vec<Issue> = all_issues
+        let active_tickets: Vec<Ticket> = all_tickets
             .into_iter()
-            .filter(|issue| match issue.state.type_ {
-                IssueStateType::Unstarted | IssueStateType::Started => true,
-                IssueStateType::Completed | IssueStateType::Canceled => false,
+            .filter(|ticket| match ticket.state.type_ {
+                StateType::Open | StateType::InProgress => true,
+                StateType::Closed | StateType::Cancelled => false,
+                StateType::Custom(_) => true, // Include custom states as active by default
             })
             .collect();
 
-        info!("Retrieved {} active issues for current user", active_issues.len());
-        Ok(active_issues)
+        info!("Retrieved {} active tickets for current user", active_tickets.len());
+        Ok(active_tickets)
+    }
+
+    pub async fn get_workspace(&self) -> Result<Workspace> {
+        debug!("Getting workspace information");
+        let workspace = self.ticket_service.get_workspace().await?;
+        info!("Retrieved workspace: {}", workspace.name);
+        Ok(workspace)
     }
 }

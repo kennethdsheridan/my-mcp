@@ -1,14 +1,16 @@
 [package]
-name = "linear-mcp"
+name = "generic-mcp"
 version = "0.1.0"
 edition = "2021"
 authors = ["Your Name <your.email@example.com>"]
-description = "A Model Context Protocol server using Ports and Adapters architecture"
+description = "A generic Model Context Protocol server framework using Ports and Adapters architecture"
 license = "MIT OR Apache-2.0"
 
 [features]
 default = ["linear", "tokio"]
 linear = []
+github = []
+jira = []
 dev = ["tokio"]
 
 [dependencies]
