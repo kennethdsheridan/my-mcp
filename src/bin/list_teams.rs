@@ -4,7 +4,7 @@ use std::env;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
-use linear_mcp::{LinearClient, LinearService};
+use generic_mcp::{LinearClient, LinearService};
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -29,7 +29,7 @@ impl McpServerImpl {
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("user_id is required"))?;
 
-        let issues = self.application.get_assigned_issues(user_id).await?;
+        let issues = self.application.get_assigned_tickets(user_id).await?;
         Ok(json!({
             "issues": issues,
             "count": issues.len()
@@ -46,7 +46,7 @@ impl McpServerImpl {
             .and_then(|v| v.as_str())
             .unwrap_or("");
 
-        let issues = self.application.search_issues(query).await?;
+        let issues = self.application.search_tickets(query).await?;
         Ok(json!({
             "issues": issues,
             "count": issues.len(),
@@ -59,7 +59,7 @@ impl McpServerImpl {
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("issue_id is required"))?;
 
-        let issue = self.application.get_issue(issue_id).await?;
+        let issue = self.application.get_ticket(issue_id).await?;
         Ok(json!({ "issue": issue }))
     }
 }
@@ -164,7 +164,7 @@ impl McpServer for McpServerImpl {
         match uri {
             "linear://issues/assigned" => {
                 let user = self.application.get_current_user().await?;
-                let issues = self.application.get_assigned_issues(&user.id).await?;
+                let issues = self.application.get_assigned_tickets(&user.id).await?;
                 Ok(json!({
                     "uri": uri,
                     "mimeType": "application/json",

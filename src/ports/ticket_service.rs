@@ -3,9 +3,9 @@ use anyhow::Result;
 
 use crate::domain::{
     Ticket, TicketFilter, CreateTicketRequest, UpdateTicketRequest,
-    User, Team, Label, CreateLabelRequest, Project, ProjectMilestone,
-    Workspace
+    Label, CreateLabelRequest, Project, ProjectMilestone, Workspace
 };
+use crate::domain::workspace::{User, Team};
 
 /// Generic ticket/issue management service interface
 #[async_trait]

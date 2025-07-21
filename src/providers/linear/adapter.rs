@@ -4,11 +4,12 @@ use std::collections::HashMap;
 
 use crate::domain::{
     Ticket, TicketFilter, CreateTicketRequest, UpdateTicketRequest,
-    Team, Label, CreateLabelRequest, Project, ProjectMilestone, Workspace,
+    Label, CreateLabelRequest, Project, ProjectMilestone, Workspace,
     Priority, State, StateType,
     // Legacy Linear types for mapping
     Issue, IssuePriority, IssueState, IssueStateType
 };
+use crate::domain::workspace::Team;
 use crate::domain::workspace::User;
 use crate::ports::{TicketService, ProviderConfig, LinearService};
 use crate::adapters::LinearClient;

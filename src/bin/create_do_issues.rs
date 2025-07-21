@@ -4,8 +4,8 @@ use std::env;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
-use linear_mcp::{LinearClient, LinearService};
-use linear_mcp::domain::{CreateIssueRequest, IssuePriority};
+use generic_mcp::{LinearClient, LinearService};
+use generic_mcp::domain::{CreateIssueRequest, IssuePriority};
 
 #[tokio::main]
 async fn main() -> Result<()> {

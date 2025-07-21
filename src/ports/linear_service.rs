@@ -3,8 +3,9 @@ use anyhow::Result;
 
 use crate::domain::{
     Issue, IssueFilter, CreateIssueRequest, UpdateIssueRequest,
-    User, Team, Label, CreateLabelRequest, Project, ProjectMilestone
+    Label, CreateLabelRequest, Project, ProjectMilestone
 };
+use crate::domain::workspace::{User, Team};
 
 #[async_trait]
 pub trait LinearService {

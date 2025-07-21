@@ -32,7 +32,13 @@ rmcp = { version = "0.2.0", features = ["server"] }
 
 # GraphQL client alternative if linear-sdk doesn't work
 graphql_client = "0.14"
-reqwest = { version = "0.12", features = ["json"] }
+
+# HTTP client - using hyper for better performance
+hyper = { version = "1.0", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+http-body-util = "0.1"
+hyper-tls = "0.6"
+bytes = "1.0"
 
 # Logging
 tracing = "0.1"

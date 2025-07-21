@@ -1,25 +1,32 @@
 use async_trait::async_trait;
 use anyhow::{Result, anyhow};
-use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
+use bytes::Bytes;
+use http_body_util::{BodyExt, Full};
+use hyper::{Request, Response, Method, Uri, header::{HeaderValue, AUTHORIZATION, CONTENT_TYPE}};
+use hyper_util::rt::TokioExecutor;
+use hyper_tls::HttpsConnector;
+use hyper_util::client::legacy::Client;
 
 use crate::domain::{
     Issue, IssueFilter, CreateIssueRequest, UpdateIssueRequest,
-    User, Team, Label, CreateLabelRequest, Project, ProjectMilestone,
+    Label, CreateLabelRequest, Project, ProjectMilestone,
     IssuePriority, IssueState, IssueStateType, ProjectState
 };
+use crate::domain::workspace::{User, Team};
 use crate::ports::LinearService;
 
 pub struct LinearClient {
-    client: Client,
+    client: Client<HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>, Full<Bytes>>,
     api_token: String,
     base_url: String,
 }
 
 impl LinearClient {
     pub fn new(api_token: String) -> Result<Self> {
-        let client = Client::new();
+        let https = HttpsConnector::new();
+        let client = Client::builder(TokioExecutor::new()).build(https);
         let base_url = "https://api.linear.app/graphql".to_string();
         
         Ok(Self {
@@ -38,22 +45,27 @@ impl LinearClient {
             body["variables"] = vars;
         }
 
-        let response = self
-            .client
-            .post(&self.base_url)
-            .header("Authorization", &self.api_token)
-            .header("Content-Type", "application/json")
-            .json(&body)
-            .send()
-            .await?;
+        let body_bytes = serde_json::to_vec(&body)?;
+        let uri: Uri = self.base_url.parse()?;
+        
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri(uri)
+            .header(AUTHORIZATION, HeaderValue::from_str(&self.api_token)?)
+            .header(CONTENT_TYPE, "application/json")
+            .body(Full::new(Bytes::from(body_bytes)))?;
 
+        let response = self.client.request(request).await?;
         let status = response.status();
+        
         if !status.is_success() {
-            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            let body_bytes = response.collect().await?.to_bytes();
+            let error_text = String::from_utf8_lossy(&body_bytes);
             return Err(anyhow!("GraphQL request failed: {} - {}", status, error_text));
         }
 
-        let json: Value = response.json().await?;
+        let body_bytes = response.collect().await?.to_bytes();
+        let json: Value = serde_json::from_slice(&body_bytes)?;
         
         if let Some(errors) = json.get("errors") {
             return Err(anyhow!("GraphQL errors: {}", errors));
@@ -387,6 +399,7 @@ impl LinearService for LinearClient {
             avatar_url: user_data["avatarUrl"].as_str().map(|s| s.to_string()),
             display_name: user_data["displayName"].as_str().unwrap_or_default().to_string(),
             active: user_data["active"].as_bool().unwrap_or(true),
+            custom_fields: HashMap::new(),
         })
     }
 
@@ -416,6 +429,7 @@ impl LinearService for LinearClient {
                 key: team_data["key"].as_str().unwrap_or_default().to_string(),
                 description: team_data["description"].as_str().map(|s| s.to_string()),
                 members: Vec::new(), // We'll populate this separately if needed
+                custom_fields: HashMap::new(),
             });
         }
 
