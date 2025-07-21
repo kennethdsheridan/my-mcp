@@ -41,14 +41,16 @@ impl LinearClient {
         let response = self
             .client
             .post(&self.base_url)
-            .header("Authorization", format!("Bearer {}", self.api_token))
+            .header("Authorization", &self.api_token)
             .header("Content-Type", "application/json")
             .json(&body)
             .send()
             .await?;
 
-        if !response.status().is_success() {
-            return Err(anyhow!("GraphQL request failed: {}", response.status()));
+        let status = response.status();
+        if !status.is_success() {
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(anyhow!("GraphQL request failed: {} - {}", status, error_text));
         }
 
         let json: Value = response.json().await?;

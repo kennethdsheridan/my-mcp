@@ -1,10 +1,11 @@
 use anyhow::Result;
+use dotenv::dotenv;
 use std::env;
 use std::sync::Arc;
 use tracing::{info, error};
 use tracing_subscriber::{fmt, EnvFilter};
 
-use my_mcp::{
+use linear_mcp::{
     Application,
     LinearClient,
     McpServerImpl,
@@ -13,11 +14,13 @@ use my_mcp::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenv().ok();
+    
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    info!("Starting my-mcp server...");
+    info!("Starting linear-mcp server...");
 
     let linear_api_token = env::var("LINEAR_API_TOKEN")
         .map_err(|_| anyhow::anyhow!("LINEAR_API_TOKEN environment variable is required"))?;

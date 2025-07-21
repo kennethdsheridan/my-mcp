@@ -1,4 +1,4 @@
-# My-MCP: Linear Model Context Protocol Server
+# Linear MCP: Linear Model Context Protocol Server
 
 A high-performance Model Context Protocol (MCP) server built in Rust using Ports and Adapters (Hexagonal) architecture for Linear API integration.
 
@@ -45,7 +45,7 @@ src/
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd my-mcp
+cd linear-mcp
 ```
 
 2. Copy environment template:
@@ -83,7 +83,7 @@ Example configuration for Claude Code:
 {
   "mcpServers": {
     "linear": {
-      "command": "/path/to/my-mcp/target/release/my-mcp",
+      "command": "/path/to/linear-mcp/target/release/linear-mcp",
       "env": {
         "LINEAR_API_TOKEN": "your_token_here"
       }
@@ -123,7 +123,7 @@ cargo clippy
 ## Dependencies
 
 - `rmcp` - Official Rust MCP SDK
-- `reqwest` - HTTP client for Linear GraphQL API
+- `hyper` - HTTP client for Linear GraphQL API
 - `tokio` - Async runtime
 - `serde` - JSON serialization
 - `anyhow` - Error handling

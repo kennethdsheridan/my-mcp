@@ -1,10 +1,10 @@
 # Claude Code Assistant Instructions
 
-This document contains instructions for Claude Code when working on the my-mcp project.
+This document contains instructions for Claude Code when working on the linear-mcp project.
 
 ## Project Overview
 
-My-MCP is a Model Context Protocol server built in Rust using Ports and Adapters architecture. It provides Linear API integration through MCP tools and resources.
+Linear-MCP is a Model Context Protocol server built in Rust using Ports and Adapters architecture. It provides Linear API integration through MCP tools and resources.
 
 ## Architecture
 
