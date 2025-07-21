@@ -261,8 +261,102 @@ impl LinearService for LinearClient {
         Ok(Some(issue))
     }
 
-    async fn create_issue(&self, _request: &CreateIssueRequest) -> Result<Issue> {
-        todo!("Implement create_issue")
+    async fn create_issue(&self, request: &CreateIssueRequest) -> Result<Issue> {
+        let priority = match request.priority.as_ref().unwrap_or(&IssuePriority::Medium) {
+            IssuePriority::NoPriority => 0,
+            IssuePriority::Urgent => 1,
+            IssuePriority::High => 2,
+            IssuePriority::Medium => 3,
+            IssuePriority::Low => 4,
+        };
+
+        let mut variables = serde_json::json!({
+            "title": request.title,
+            "priority": priority
+        });
+
+        if let Some(description) = &request.description {
+            variables["description"] = serde_json::Value::String(description.clone());
+        }
+
+        if let Some(assignee_id) = &request.assignee_id {
+            variables["assigneeId"] = serde_json::Value::String(assignee_id.clone());
+        }
+
+        let team_id = request.team_id.as_ref()
+            .ok_or_else(|| anyhow!("team_id is required for issue creation"))?;
+        variables["teamId"] = serde_json::Value::String(team_id.clone());
+
+        if let Some(project_id) = &request.project_id {
+            variables["projectId"] = serde_json::Value::String(project_id.clone());
+        }
+
+        if let Some(label_ids) = &request.label_ids {
+            variables["labelIds"] = serde_json::Value::Array(
+                label_ids.iter().map(|id| serde_json::Value::String(id.clone())).collect()
+            );
+        }
+
+        let query = r#"
+            mutation CreateIssue($title: String!, $description: String, $priority: Int, $assigneeId: String, $teamId: String!, $projectId: String, $labelIds: [String!]) {
+                issueCreate(input: {
+                    title: $title
+                    description: $description
+                    priority: $priority
+                    assigneeId: $assigneeId
+                    teamId: $teamId
+                    projectId: $projectId
+                    labelIds: $labelIds
+                }) {
+                    success
+                    issue {
+                        id
+                        identifier
+                        title
+                        description
+                        priority
+                        url
+                        createdAt
+                        updatedAt
+                        dueDate
+                        estimate
+                        state {
+                            id
+                            name
+                            type
+                            position
+                        }
+                        assignee {
+                            id
+                            name
+                        }
+                        creator {
+                            id
+                            name
+                        }
+                        project {
+                            id
+                            name
+                        }
+                        labels {
+                            nodes {
+                                id
+                                name
+                            }
+                        }
+                    }
+                }
+            }
+        "#;
+
+        let data = self.execute_query(query, Some(variables)).await?;
+        
+        if !data["issueCreate"]["success"].as_bool().unwrap_or(false) {
+            return Err(anyhow!("Failed to create issue"));
+        }
+
+        let issue_data = &data["issueCreate"]["issue"];
+        self.parse_issue(issue_data)
     }
 
     async fn update_issue(&self, _request: &UpdateIssueRequest) -> Result<Issue> {
@@ -297,7 +391,35 @@ impl LinearService for LinearClient {
     }
 
     async fn get_teams(&self) -> Result<Vec<Team>> {
-        todo!("Implement get_teams")
+        let query = r#"
+            query GetTeams {
+                teams {
+                    nodes {
+                        id
+                        name
+                        key
+                        description
+                    }
+                }
+            }
+        "#;
+
+        let data = self.execute_query(query, None).await?;
+        let teams_data = data["teams"]["nodes"].as_array()
+            .ok_or_else(|| anyhow!("Invalid teams response format"))?;
+
+        let mut teams = Vec::new();
+        for team_data in teams_data {
+            teams.push(Team {
+                id: team_data["id"].as_str().unwrap_or_default().to_string(),
+                name: team_data["name"].as_str().unwrap_or_default().to_string(),
+                key: team_data["key"].as_str().unwrap_or_default().to_string(),
+                description: team_data["description"].as_str().map(|s| s.to_string()),
+                members: Vec::new(), // We'll populate this separately if needed
+            });
+        }
+
+        Ok(teams)
     }
 
     async fn get_team_members(&self, _team_id: &str) -> Result<Vec<User>> {

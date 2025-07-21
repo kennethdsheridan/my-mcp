@@ -62,6 +62,7 @@ pub struct CreateIssueRequest {
     pub description: Option<String>,
     pub priority: Option<IssuePriority>,
     pub assignee_id: Option<String>,
+    pub team_id: Option<String>,
     pub project_id: Option<String>,
     pub label_ids: Option<Vec<String>>,
     pub due_date: Option<DateTime<Utc>>,

@@ -59,19 +59,78 @@ LINEAR_API_TOKEN=your_linear_api_token_here
 RUST_LOG=info
 ```
 
-## Usage
+## Quick Start
 
-### Build and Run
+1. **Setup Environment**:
+```bash
+# Clone and setup
+git clone <repository-url>
+cd linear-mcp
+cp .env.example .env
+# Edit .env with your Linear API token
+```
+
+2. **Test Your Setup**:
+```bash
+# Test Linear API connection
+cargo run --bin test_linear
+
+# List available teams
+cargo run --bin list_teams
+
+# Create example Digital Ocean issues
+cargo run --bin create_do_issues
+```
+
+3. **Run MCP Server**:
+```bash
+# Start the MCP server for AI assistant integration
+cargo run
+```
+
+## CLI Commands
+
+The project includes several CLI utilities for interacting with Linear:
+
+### Main Binaries
+
+| Command | Description |
+|---------|-------------|
+| `cargo run --bin linear-mcp` | Start MCP server for AI assistants |
+| `cargo run --bin test_linear` | Test API connection and fetch your assigned issues |
+| `cargo run --bin list_teams` | List all available teams in your Linear workspace |
+| `cargo run --bin create_do_issues` | Create Digital Ocean IPMI integration issues |
+
+### Examples
 
 ```bash
-# Build the project
-cargo build
+# Test your Linear API setup
+cargo run --bin test_linear
 
-# Run the MCP server
-cargo run
+# See all teams and find team IDs
+cargo run --bin list_teams
+
+# Create structured issues for a project
+cargo run --bin create_do_issues
+
+# Run the MCP server (for AI assistant integration)
+cargo run --bin linear-mcp
 
 # Run with debug logging
-RUST_LOG=debug cargo run
+RUST_LOG=debug cargo run --bin test_linear
+```
+
+## Usage
+
+### CLI Utilities
+
+Perfect for testing, automation, and one-off operations:
+
+```bash
+# Development workflow
+cargo build                    # Build all binaries
+cargo run --bin test_linear   # Verify API connection
+cargo run --bin list_teams    # Explore your workspace
 ```
 
 ### Integration with AI Assistants
